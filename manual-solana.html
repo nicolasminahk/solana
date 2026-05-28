@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de a bordo · De directora a constructora con IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..700&family=Hanken+Grotesk:wght@300..800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3EDE2;
+    --paper-2:#ECE3D4;
+    --cream:#FBF7EF;
+    --ink:#1A1613;
+    --ink-2:#2C2620;
+    --ink-soft:#4A4138;
+    --muted:#7B7064;
+    --line:#D9CDB9;
+    --amber:#BF5E2C;     /* acento filmico principal */
+    --amber-soft:#E8B98C;
+    --gold:#C2974A;
+    --teal:#2D6B60;
+    --green:#2F9E5B;     /* leyenda: agente autonomo */
+    --purple:#7B61FF;    /* leyenda: hibrido */
+    --orange:#E0823A;    /* leyenda: input humano */
+    --shadow:0 1px 0 rgba(0,0,0,.04), 0 18px 40px -24px rgba(26,22,19,.45);
+    --radius:18px;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Hanken Grotesk',sans-serif;
+    font-size:18px;
+    line-height:1.72;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  /* grain overlay */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.035;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  ::selection{background:var(--amber);color:var(--cream)}
+
+  /* progress bar */
+  #progress{position:fixed;top:0;left:0;height:3px;width:0;z-index:10000;
+    background:linear-gradient(90deg,var(--amber),var(--gold));transition:width .1s linear}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+  .narrow{max-width:760px;margin:0 auto;padding:0 28px}
+
+  h1,h2,h3,h4{font-family:'Fraunces',serif;font-weight:500;line-height:1.08;letter-spacing:-.01em}
+  em{font-style:italic}
+  strong{font-weight:700;color:var(--ink)}
+  a{color:var(--amber);text-decoration:none}
+
+  /* ====================== HERO ====================== */
+  .hero{
+    background:radial-gradient(120% 90% at 80% -10%, #3a2f23 0%, var(--ink) 45%, #120f0c 100%);
+    color:var(--cream);min-height:100vh;position:relative;display:flex;flex-direction:column;
+    justify-content:center;overflow:hidden;border-bottom:1px solid #000;
+  }
+  .hero::after{ /* film perforations on the side */
+    content:"";position:absolute;top:0;bottom:0;left:0;width:42px;
+    background:
+      repeating-linear-gradient(to bottom, transparent 0 22px, rgba(0,0,0,.55) 22px 40px);
+    border-right:1px solid rgba(255,255,255,.06);opacity:.6;
+  }
+  .hero .perf-right{position:absolute;top:0;bottom:0;right:0;width:42px;
+    background:repeating-linear-gradient(to bottom, transparent 0 22px, rgba(0,0,0,.55) 22px 40px);
+    border-left:1px solid rgba(255,255,255,.06);opacity:.6;}
+  .hero-inner{position:relative;z-index:2;padding:0 70px}
+  .hero .kicker{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.32em;
+    text-transform:uppercase;color:var(--amber-soft);margin-bottom:30px;opacity:0}
+  .hero h1{font-size:clamp(3rem,9vw,7rem);font-weight:300;line-height:.96;color:#fff;
+    letter-spacing:-.02em}
+  .hero h1 .it{font-style:italic;font-weight:400;color:var(--amber-soft)}
+  .hero .sub{font-size:clamp(1.1rem,2.4vw,1.5rem);color:#d8cdbd;max-width:640px;
+    margin-top:34px;line-height:1.5;font-weight:300}
+  .hero .meta{display:flex;gap:34px;flex-wrap:wrap;margin-top:54px;
+    font-family:'JetBrains Mono',monospace;font-size:.78rem;letter-spacing:.04em;color:#9c9082}
+  .hero .meta b{color:var(--cream);font-weight:500;display:block;font-size:.95rem;margin-top:3px}
+  .scroll-cue{position:absolute;bottom:34px;left:50%;transform:translateX(-50%);z-index:3;
+    font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.3em;color:#8a7e70;
+    text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:10px;opacity:0}
+  .scroll-cue .bar{width:1px;height:38px;background:linear-gradient(var(--amber-soft),transparent);
+    animation:drop 1.8s infinite}
+  @keyframes drop{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}
+    51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+  .reveal-up{opacity:0;transform:translateY(26px);animation:up 1s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes up{to{opacity:1;transform:none}}
+  .d1{animation-delay:.15s}.d2{animation-delay:.35s}.d3{animation-delay:.6s}
+  .d4{animation-delay:.85s}.d5{animation-delay:1.1s}.d6{animation-delay:1.35s}
+
+  /* ====================== SECTION SCAFFOLD ====================== */
+  section{padding:96px 0;position:relative}
+  .sec-tag{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.26em;
+    text-transform:uppercase;color:var(--amber);margin-bottom:18px;display:flex;align-items:center;gap:14px}
+  .sec-tag::before{content:"";width:38px;height:1px;background:var(--amber)}
+  .sec-num{font-family:'Fraunces',serif;font-size:.95rem;color:var(--muted);font-style:italic}
+  h2.title{font-size:clamp(2.2rem,5vw,3.6rem);font-weight:400;margin-bottom:8px;max-width:18ch}
+  h2.title .it{font-style:italic;color:var(--amber)}
+  .lede{font-size:1.22rem;color:var(--ink-soft);max-width:62ch;margin-top:22px;font-weight:300}
+  p{margin:18px 0;color:var(--ink-soft)}
+  p strong{color:var(--ink)}
+
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* dark interludes */
+  .dark{background:var(--ink);color:#e9e0d4}
+  .dark p{color:#c7bcab}.dark .lede{color:#cfc4b3}
+  .dark h2.title{color:#fff}.dark .sec-tag{color:var(--amber-soft)}
+  .dark .sec-tag::before{background:var(--amber-soft)}
+  .dark strong{color:#fff}.dark .sec-num{color:#9c9082}
+
+  /* ====================== INDEX ====================== */
+  .index{background:var(--ink-2);color:#e9e0d4;padding:80px 0}
+  .index .wrap{display:grid;grid-template-columns:1fr 1.4fr;gap:60px;align-items:start}
+  .index h2{font-size:2.4rem;color:#fff;font-weight:400}
+  .index .toc{display:grid;grid-template-columns:1fr 1fr;gap:2px 40px}
+  .index .toc a{display:flex;gap:16px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.09);
+    color:#d8cdbd;transition:.25s;align-items:baseline}
+  .index .toc a:hover{color:#fff;padding-left:8px}
+  .index .toc .n{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--amber-soft);min-width:26px}
+  @media(max-width:780px){.index .wrap{grid-template-columns:1fr}.index .toc{grid-template-columns:1fr}}
+
+  /* ====================== CARDS / GRID ====================== */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:40px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:40px}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+
+  .card{background:var(--cream);border:1px solid var(--line);border-radius:var(--radius);
+    padding:30px;box-shadow:var(--shadow);transition:transform .4s cubic-bezier(.2,.7,.2,1),box-shadow .4s}
+  .card:hover{transform:translateY(-5px);box-shadow:0 30px 50px -28px rgba(26,22,19,.5)}
+  .card h3{font-size:1.45rem;margin-bottom:6px}
+  .card .ico{font-size:1.7rem;margin-bottom:14px;display:block}
+  .card p{font-size:.98rem;margin:10px 0 0;color:var(--ink-soft)}
+
+  /* bridge cards (cine -> codigo) */
+  .bridge{display:grid;grid-template-columns:1fr auto 1fr;gap:0;align-items:stretch;
+    background:var(--cream);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:14px}
+  .bridge .b-side{padding:20px 26px}
+  .bridge .b-cine{background:linear-gradient(180deg,#2c2620,#1f1a16);color:#ece3d4}
+  .bridge .b-arrow{display:flex;align-items:center;justify-content:center;width:64px;
+    background:var(--amber);color:#fff;font-size:1.3rem}
+  .bridge .b-label{font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.18em;
+    text-transform:uppercase;opacity:.7;margin-bottom:6px}
+  .bridge .b-side h4{font-size:1.18rem;font-weight:500}
+  .bridge .b-cine h4{color:#fff}
+  .bridge .b-code small{display:block;color:var(--muted);font-size:.86rem;margin-top:4px;line-height:1.5}
+  @media(max-width:680px){.bridge{grid-template-columns:1fr}.bridge .b-arrow{width:auto;height:44px}}
+
+  /* glossary */
+  .gloss{border-top:1px solid var(--line);margin-top:36px}
+  .gterm{border-bottom:1px solid var(--line);padding:24px 0;display:grid;
+    grid-template-columns:230px 1fr;gap:30px;align-items:start}
+  .gterm dt{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:500}
+  .gterm .tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.6rem;
+    letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:20px;
+    background:var(--paper-2);color:var(--muted);margin-top:8px}
+  .gterm dd p{margin:0}
+  .gterm dd .ana{margin-top:10px;font-size:.92rem;color:var(--teal);font-style:italic}
+  .gterm dd .ana::before{content:"🎬 ";font-style:normal}
+  @media(max-width:680px){.gterm{grid-template-columns:1fr;gap:8px}}
+
+  /* callouts */
+  .callout{border-radius:14px;padding:26px 30px;margin:34px 0;border-left:4px solid var(--amber);
+    background:var(--cream);box-shadow:var(--shadow)}
+  .callout .ct{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--amber);margin-bottom:8px}
+  .callout p{margin:0;color:var(--ink-soft)}
+  .callout.tip{border-color:var(--green)}.callout.tip .ct{color:var(--green)}
+  .callout.warn{border-color:var(--orange)}.callout.warn .ct{color:var(--orange)}
+
+  /* code block */
+  .code{background:#16120f;color:#e9e0d4;border-radius:14px;padding:22px 24px;margin:24px 0;
+    font-family:'JetBrains Mono',monospace;font-size:.84rem;line-height:1.75;overflow-x:auto;
+    border:1px solid #2a241e}
+  .code .c{color:#7d7264}.code .k{color:var(--amber-soft)}.code .g{color:#79c08a}
+  .code .pr{color:#9aa7ff}
+
+  /* legend */
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:30px 0}
+  .legend .li{display:flex;align-items:center;gap:10px;background:var(--cream);border:1px solid var(--line);
+    border-radius:30px;padding:8px 16px;font-size:.86rem;color:var(--ink-soft)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .dot.g{background:var(--green)}.dot.p{background:var(--purple)}.dot.o{background:var(--orange)}
+
+  /* workflow steps */
+  .flow{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-top:44px;
+    border:1px solid rgba(255,255,255,.12);border-radius:16px;overflow:hidden}
+  .fstep{padding:24px 18px;border-right:1px solid rgba(255,255,255,.1);position:relative}
+  .fstep:last-child{border-right:none}
+  .fstep .fn{font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.14em;
+    color:var(--amber-soft);margin-bottom:10px}
+  .fstep h4{font-size:1.12rem;color:#fff;margin-bottom:6px;font-weight:500}
+  .fstep p{font-size:.82rem;color:#bcb1a1;margin:0}
+  .fstep .tool{display:inline-block;margin-top:10px;font-family:'JetBrains Mono',monospace;
+    font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:#8a7e70}
+  @media(max-width:900px){.flow{grid-template-columns:1fr 1fr}.fstep{border-bottom:1px solid rgba(255,255,255,.1)}}
+  @media(max-width:560px){.flow{grid-template-columns:1fr}}
+
+  /* ecosystem diagram */
+  .eco{position:relative;margin-top:50px;background:var(--cream);border:1px solid var(--line);
+    border-radius:20px;padding:46px 34px;box-shadow:var(--shadow)}
+  .eco-core{text-align:center;margin-bottom:36px}
+  .eco-core .badge{display:inline-block;font-family:'Fraunces',serif;font-size:1.6rem;
+    background:var(--ink);color:var(--cream);padding:14px 34px;border-radius:40px}
+  .eco-core small{display:block;color:var(--muted);margin-top:12px;font-size:.86rem}
+  .eco-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:780px){.eco-grid{grid-template-columns:1fr}}
+  .eco-item{border:1px solid var(--line);border-radius:14px;padding:22px;background:var(--paper);position:relative}
+  .eco-item .et{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--amber);margin-bottom:6px}
+  .eco-item h4{font-size:1.18rem;margin-bottom:6px}
+  .eco-item p{font-size:.88rem;margin:0;color:var(--ink-soft)}
+
+  /* node automation */
+  .nodes{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin-top:40px}
+  .node{flex:1;min-width:150px;background:var(--cream);border:1px solid var(--line);border-radius:14px;
+    padding:22px 18px;text-align:center;position:relative}
+  .node .nlabel{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .node h4{font-size:1.05rem;margin-bottom:6px}
+  .node p{font-size:.8rem;margin:0;color:var(--ink-soft)}
+  .node-arrow{display:flex;align-items:center;color:var(--amber);font-size:1.5rem;padding:0 6px}
+  @media(max-width:680px){.nodes{flex-direction:column}.node-arrow{transform:rotate(90deg);justify-content:center;padding:6px 0}}
+
+  /* instances dev/prod */
+  .inst{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:40px}
+  @media(max-width:680px){.inst{grid-template-columns:1fr}}
+  .inst .box{border-radius:16px;padding:28px;border:1px solid var(--line);background:var(--cream)}
+  .inst .box.prod{background:linear-gradient(180deg,#23362f,#1c2c26);color:#dcebe2;border-color:#2d6b60}
+  .inst .box .h{font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.16em;
+    text-transform:uppercase;margin-bottom:10px}
+  .inst .box.dev .h{color:var(--orange)}.inst .box.prod .h{color:#7fd1b8}
+  .inst .box h4{font-size:1.5rem;margin-bottom:8px}.inst .box.prod h4{color:#fff}
+  .inst .box p{font-size:.9rem;margin:6px 0 0}.inst .box.prod p{color:#bcd6cb}
+
+  /* checklist */
+  .check{list-style:none;margin-top:34px}
+  .check li{display:flex;gap:18px;padding:18px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+  .check .box{min-width:26px;height:26px;border:2px solid var(--amber);border-radius:7px;margin-top:3px;
+    display:flex;align-items:center;justify-content:center;color:var(--amber);font-size:.8rem;font-weight:700}
+  .check .ctext strong{display:block;font-size:1.08rem;color:var(--ink);margin-bottom:2px}
+  .check .ctext span{font-size:.92rem;color:var(--ink-soft)}
+
+  /* big pull quote */
+  .pull{font-family:'Fraunces',serif;font-size:clamp(1.8rem,4.5vw,3.1rem);font-weight:300;
+    line-height:1.18;color:#fff;max-width:20ch;font-style:italic}
+  .pull .amb{color:var(--amber-soft)}
+
+  /* footer */
+  footer{background:#100d0b;color:#9c9082;padding:70px 0 50px;text-align:center}
+  footer .fmark{font-family:'Fraunces',serif;font-size:1.6rem;color:#fff;font-style:italic;margin-bottom:14px}
+  footer p{color:#9c9082;font-size:.9rem;max-width:50ch;margin:8px auto}
+  footer .sig{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.2em;
+    text-transform:uppercase;margin-top:30px;color:#6f655a}
+
+  .divline{height:1px;background:var(--line);max-width:1080px;margin:0 auto}
+  .stat-row{display:flex;gap:40px;flex-wrap:wrap;margin-top:40px}
+  .stat .num{font-family:'Fraunces',serif;font-size:2.6rem;color:var(--amber);line-height:1}
+  .stat .lab{font-size:.84rem;color:var(--muted);margin-top:6px}
+
+  @media print{
+    body{background:#fff;font-size:12pt}
+    .hero{min-height:auto;padding:60px 0}
+    #progress,.scroll-cue,.hero .perf-right,.hero::after{display:none}
+    .reveal{opacity:1!important;transform:none!important}
+    section{padding:30px 0;page-break-inside:avoid}
+    .card:hover{transform:none}
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<!-- ========================= HERO ========================= -->
+<header class="hero">
+  <div class="perf-right"></div>
+  <div class="hero-inner">
+    <div class="kicker reveal-up d1">Manual de a bordo · Edición 01 · 2026</div>
+    <h1 class="reveal-up d2">De directora<br>a <span class="it">constructora</span><br>con IA.</h1>
+    <p class="sub reveal-up d3">Una guía para Solana — para pasar del set de filmación al estudio digital, sin perder el ojo que ya tenés. Acá traducimos el oficio.</p>
+    <div class="meta reveal-up d4">
+      <div>Para <b>Solana</b></div>
+      <div>De parte de <b>Nico + Clau</b></div>
+      <div>Tema <b>Vibe coding · Claude · Negocios digitales</b></div>
+      <div>Lectura <b>Tomate tu tiempo</b></div>
+    </div>
+  </div>
+  <div class="scroll-cue reveal-up d6"><span>Acción</span><span class="bar"></span></div>
+</header>
+
+<!-- ========================= INDEX ========================= -->
+<nav class="index">
+  <div class="wrap">
+    <div>
+      <h2>El plano de rodaje</h2>
+      <p style="color:#bcb1a1;margin-top:16px;font-size:.98rem">Doce escenas. Empezá por donde quieras, pero si es tu primera vez, leelo en orden: cada parte apoya a la siguiente.</p>
+    </div>
+    <div class="toc">
+      <a href="#bienvenida"><span class="n">00</span><span>Bienvenida (leé esto primero)</span></a>
+      <a href="#puente"><span class="n">01</span><span>Del set al estudio digital</span></a>
+      <a href="#glosario"><span class="n">02</span><span>Glosario fundacional</span></a>
+      <a href="#claude"><span class="n">03</span><span>Claude: el estudio entero</span></a>
+      <a href="#vibe"><span class="n">04</span><span>Qué es el vibe coding</span></a>
+      <a href="#flujo"><span class="n">05</span><span>El flujo de trabajo de Nico</span></a>
+      <a href="#tecnica"><span class="n">06</span><span>La caja de herramientas técnica</span></a>
+      <a href="#automatizacion"><span class="n">07</span><span>Automatización y nodos</span></a>
+      <a href="#negocios"><span class="n">08</span><span>Negocios digitales + Shopify</span></a>
+      <a href="#practicas"><span class="n">09</span><span>Buenas prácticas y mentalidad</span></a>
+      <a href="#arranque"><span class="n">10</span><span>Tus primeros pasos</span></a>
+      <a href="#cheat"><span class="n">11</span><span>Chuleta rápida</span></a>
+    </div>
+  </div>
+</nav>
+
+<!-- ========================= 00 BIENVENIDA ========================= -->
+<section id="bienvenida">
+  <div class="narrow">
+    <div class="sec-tag reveal"><span class="sec-num">00</span> Bienvenida</div>
+    <h2 class="title reveal">Solana, esto<br>es <span class="it">para vos.</span></h2>
+    <p class="lede reveal">No venís a aprender a programar. Venís a aprender a <strong>dirigir máquinas que programan</strong>. Es otra cosa, y es mucho más cercano a lo que ya sabés hacer de lo que parece.</p>
+
+    <p class="reveal">Durante años dirigiste rodajes: pensaste un guion, lo planificaste, coordinaste un equipo, filmaste, montaste, corregiste el color y entregaste una pieza. Tomaste mil decisiones estéticas y narrativas que la cámara, sola, jamás hubiera tomado. <strong>Esa cabeza es exactamente la que necesitamos acá.</strong></p>
+
+    <p class="reveal">Lo que cambia es el set. En lugar de una cámara, una mesa de montaje y una sala de color, vas a tener una herramienta —Claude— que sabe escribir código, mover datos, armar webs, automatizar tareas y levantar negocios digitales. Vos no vas a operar cada perilla técnica: vas a <strong>dirigir</strong>. Le vas a decir qué querés, con qué intención, con qué estética, y vas a revisar lo que devuelve con el mismo criterio con el que revisás un corte.</p>
+
+    <div class="callout tip reveal">
+      <div class="ct">La idea de fondo</div>
+      <p>El objetivo de este manual no es que sepas todo de memoria. Es que entiendas <strong>el mapa</strong>: cómo se llama cada cosa, para qué sirve y cómo encaja en la forma de trabajar. Lo técnico se aprende haciendo. El criterio —lo que vos ya tenés— es la parte difícil, y esa ya la traés puesta.</p>
+    </div>
+
+    <p class="reveal">La meta a mediano plazo es honesta y ambiciosa: que puedas convertirte en un <strong>“segundo yo”</strong>, capaz de tomar tareas que hoy hago yo y resolverlas con el mismo estándar. No de un día para el otro. Pero sí, con bases sólidas y este manual como punto de partida.</p>
+
+    <p class="reveal">Leelo tranquila. Volvé las veces que haga falta. Y cuando algo no se entienda, la mejor herramienta de estudio que tenés es la misma de la que trata todo esto: abrí Claude y preguntale. En serio.</p>
+  </div>
+</section>
+
+<div class="divline"></div>
+
+<!-- ========================= 01 PUENTE ========================= -->
+<section id="puente">
+  <div class="wrap">
+    <div class="sec-tag reveal"><span class="sec-num">01</span> El puente</div>
+    <h2 class="title reveal">Del set de filmación<br>al <span class="it">estudio digital.</span></h2>
+    <p class="lede reveal">Casi todo lo que vas a escuchar tiene un equivalente directo en el audiovisual. Cuando lo veas así, deja de ser jerga y se vuelve oficio conocido.</p>
+
+    <div style="margin-top:46px">
+      <div class="bridge reveal">
+        <div class="b-side b-cine"><div class="b-label">En el audiovisual</div><h4>El guion técnico</h4></div>
+        <div class="b-arrow">→</div>
+        <div class="b-side b-code"><div class="b-label">En lo digital</div><h4>La especificación / el prompt maestro</h4><small>El documento donde decís qué hay que construir, con qué reglas y qué tiene que pasar. Cuanto más claro, mejor sale.</small></div>
+      </div>
+      <div class="bridge reveal">
+        <div class="b-side b-cine"><div class="b-label">En el audiovisual</div><h4>La dirección</h4></div>
+        <div class="b-arrow">→</div>
+        <div class="b-side b-code"><div class="b-label">En lo digital</div><h4>El vibe coding</h4><small>Decidís el qué y el cómo creativo; la herramienta opera las perillas técnicas. Vos dirigís, no “tocás la cámara”.</small></div>
+      </div>
+      <div class="bridge reveal">
+        <div class="b-side b-cine"><div class="b-label">En el audiovisual</div><h4>El storyboard</h4></div>
+        <div class="b-arrow">→</div>
+        <div class="b-side b-code"><div class="b-label">En lo digital</div><h4>El wireframe / el MVP</h4><small>El boceto funcional. No es la pieza final: es la versión mínima para ver si la idea camina.</small></div>
+      </div>
+      <div class="bridge reveal">
+        <div class="b-side b-cine"><div class="b-label">En el audiovisual</div><h4>El montaje</h4></div>
+        <div class="b-arrow">→</div>
+        <div class="b-side b-code"><div class="b-label">En lo digital</div><h4>La iteración</h4><small>Cortás, probás, ajustás, volvés a probar. Nada sale perfecto en la primera toma; se construye en pasadas.</small></div>
+      </div>
+      <div class="bridge reveal">
+        <div class="b-side b-cine"><div class="b-label">En el audiovisual</div><h4>La corrección de color</h4></div>
+        <div class="b-arrow">→</div>
+        <div class="b-side b-code"><div class="b-label">En lo digital</div><h4>El refinamiento / el pulido</h4><small>La capa final donde el criterio estético hace la diferencia entre “funciona” y “está bueno de verdad”.</small></div>
+      </div>
+      <div class="bridge reveal">
+        <div class="b-side b-cine"><div class="b-label">En el audiovisual</div><h4>Los departamentos del equipo</h4></div>
+        <div class="b-arrow">→</div>
+        <div class="b-side b-code"><div class="b-label">En lo digital</div><h4>Las skills y los agentes</h4><small>Especialistas para cada oficio: uno redacta, otro diseña PDFs, otro arma planillas. Vos coordinás el equipo.</small></div>
+      </div>
+      <div class="bridge reveal">
+        <div class="b-side b-cine"><div class="b-label">En el audiovisual</div><h4>Las copias de seguridad del proyecto</h4></div>
+        <div class="b-arrow">→</div>
+        <div class="b-side b-code"><div class="b-label">En lo digital</div><h4>Git y los commits</h4><small>Un historial de versiones. Podés volver a cualquier punto anterior si algo se rompe. Red de seguridad total.</small></div>
+      </div>
+      <div class="bridge reveal">
+        <div class="b-side b-cine"><div class="b-label">En el audiovisual</div><h4>El render y la entrega (DCP)</h4></div>
+        <div class="b-arrow">→</div>
+        <div class="b-side b-code"><div class="b-label">En lo digital</div><h4>El deploy</h4><small>Publicar el proyecto para que el mundo lo use, con una dirección web real. El “estreno”.</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= 02 GLOSARIO ========================= -->
+<section id="glosario" class="dark">
+  <div class="wrap">
+    <div class="sec-tag reveal"><span class="sec-num">02</span> Glosario fundacional</div>
+    <h2 class="title reveal">Las palabras<br>que vas a <span class="it">escuchar todo el día.</span></h2>
+    <p class="lede reveal">No hace falta memorizarlas. Volvé acá cada vez que una suene rara. Cada término viene con una traducción al lenguaje del cine.</p>
+
+    <dl class="gloss">
+      <div class="gterm reveal">
+        <dt>IA generativa<span class="tag">ya la usás</span></dt>
+        <dd><p>La que <strong>crea contenido</strong>: texto, imágenes, video, audio. Es lo que ya venís usando con prompts para producir piezas.</p>
+        <p class="ana">Es el actor que improvisa según tu indicación.</p></dd>
+      </div>
+      <div class="gterm reveal">
+        <dt>IA agéntica<span class="tag">lo nuevo</span></dt>
+        <dd><p>La que <strong>ejecuta tareas</strong> de varios pasos por su cuenta: lee archivos, escribe código, navega, conecta herramientas y entrega un resultado terminado. No solo responde: <em>hace</em>.</p>
+        <p class="ana">Ya no es un actor: es todo un equipo que ejecuta el plan de rodaje.</p></dd>
+      </div>
+      <div class="gterm reveal">
+        <dt>Prompt<span class="tag">básico</span></dt>
+        <dd><p>La <strong>instrucción</strong> que le das a la IA. Cuanto más claro y específico, mejor el resultado. Un buen prompt incluye el qué, el para qué, el tono y los límites.</p>
+        <p class="ana">Es la indicación de dirección a un actor: “más contenido, menos urgencia, mirá fuera de cuadro”.</p></dd>
+      </div>
+      <div class="gterm reveal">
+        <dt>Contexto<span class="tag">clave</span></dt>
+        <dd><p>Todo lo que la IA “tiene a la vista” en una conversación: tus mensajes, los archivos que subiste, las instrucciones previas. Si algo no está en el contexto, la IA no lo sabe.</p>
+        <p class="ana">Es lo que el equipo ya leyó del guion antes de empezar la escena.</p></dd>
+      </div>
+      <div class="gterm reveal">
+        <dt>Modelo / LLM<span class="tag">motor</span></dt>
+        <dd><p>El “cerebro” entrenado que hace funcionar todo. Claude es un modelo. Hay versiones (Opus, Sonnet, Haiku) con distinto equilibrio entre potencia y velocidad.</p>
+        <p class="ana">Es la cámara: hay cuerpos distintos según necesites más resolución o más agilidad.</p></dd>
+      </div>
+      <div class="gterm reveal">
+        <dt>Frontend / Backend<span class="tag">web</span></dt>
+        <dd><p><strong>Frontend</strong> es lo que el usuario ve y toca (la interfaz, los colores, los botones). <strong>Backend</strong> es la maquinaria oculta detrás (la lógica, los datos, los cálculos).</p>
+        <p class="ana">Frontend es lo que sale en pantalla; backend es todo lo que pasó detrás de cámara para que eso exista.</p></dd>
+      </div>
+      <div class="gterm reveal">
+        <dt>Base de datos<span class="tag">datos</span></dt>
+        <dd><p>Donde se <strong>guarda la información</strong> de forma ordenada: usuarios, productos, pedidos, mensajes. (Ej.: MongoDB, Supabase — nombres que vas a ver seguido.)</p>
+        <p class="ana">Es el archivo maestro: todo el material catalogado para encontrarlo cuando haga falta.</p></dd>
+      </div>
+      <div class="gterm reveal">
+        <dt>API<span class="tag">conexión</span></dt>
+        <dd><p>Un <strong>enchufe estandarizado</strong> para que dos programas se hablen. Gracias a las APIs, una web puede pedirle algo a Claude, a Stripe (pagos) o a WhatsApp sin saber cómo funcionan por dentro.</p>
+        <p class="ana">Es el conector de la cámara al monitor: no te importa el circuito, te importa que la señal pase.</p></dd>
+      </div>
+      <div class="gterm reveal">
+        <dt>Repositorio (repo)<span class="tag">código</span></dt>
+        <dd><p>La <strong>carpeta del proyecto</strong> con todo su código y su historial de cambios, guardada y versionada (normalmente en GitHub).</p>
+        <p class="ana">Es la lata con todo el material del rodaje, etiquetado por toma.</p></dd>
+      </div>
+      <div class="gterm reveal">
+        <dt>MVP<span class="tag">producto</span></dt>
+        <dd><p><em>Minimum Viable Product</em>: la <strong>versión mínima funcional</strong> de una idea. Lo justo para mostrarla, testearla y aprender, sin gastar meses en lo perfecto.</p>
+        <p class="ana">Es el piloto o el primer corte: prueba de concepto antes de la producción completa.</p></dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<!-- ========================= 03 CLAUDE ECOSYSTEM ========================= -->
+<section id="claude">
+  <div class="wrap">
+    <div class="sec-tag reveal"><span class="sec-num">03</span> El estudio entero</div>
+    <h2 class="title reveal">Claude no es <span class="it">una sola cosa.</span><br>Es un estudio completo.</h2>
+    <p class="lede reveal">Mucha gente cree que Claude es “el chat”. En realidad es una familia de espacios y herramientas conectados. Conocerlos es saber a qué sala entrar para cada tarea.</p>
+
+    <div class="eco reveal">
+      <div class="eco-core">
+        <span class="badge">Claude</span>
+        <small>El mismo cerebro, distintas salas de trabajo</small>
+      </div>
+      <div class="eco-grid">
+        <div class="eco-item">
+          <div class="et">La mesa de planificación</div>
+          <h4>Claude chat (claude.ai)</h4>
+          <p>Donde pensás, planificás, escribís, analizás y generás los planes y prompts. Acá nace todo proyecto antes de construirse. Es el espacio donde estás leyendo esto.</p>
+        </div>
+        <div class="eco-item">
+          <div class="et">Las carpetas con memoria</div>
+          <h4>Proyectos</h4>
+          <p>Carpetas dentro del chat que agrupan conversaciones y archivos de un mismo tema, con instrucciones propias. Mantienen el contexto ordenado: “0800 DR” por un lado, “GeBox” por otro.</p>
+        </div>
+        <div class="eco-item">
+          <div class="et">Los oficios especializados</div>
+          <h4>Skills</h4>
+          <p>Capacidades expertas que Claude activa según la tarea: armar un PDF impecable, una presentación, una planilla, un documento Word. Como llamar al especialista correcto del equipo.</p>
+        </div>
+        <div class="eco-item">
+          <div class="et">Los enchufes al mundo</div>
+          <h4>Conectores / MCP</h4>
+          <p>Puentes que conectan a Claude con tus herramientas reales: Shopify, Miro, Jira, Google Drive, Gmail, Calendar. Con ellos Claude no solo te aconseja: <strong>actúa</strong> dentro de esas apps.</p>
+        </div>
+        <div class="eco-item">
+          <div class="et">El equipo técnico que ejecuta</div>
+          <h4>Claude Code</h4>
+          <p>Claude en la terminal de tu computadora, capaz de crear y editar archivos, instalar cosas, correr proyectos y construir apps completas. El corazón del vibe coding.</p>
+        </div>
+        <div class="eco-item">
+          <div class="et">El asistente de escritorio</div>
+          <h4>Claude Cowork</h4>
+          <p>Un Claude agéntico para tareas de oficina que opera apps por vos (planillas, documentos, navegador) sin que tengas que programar. Pensado para trabajo no técnico.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout reveal" style="margin-top:36px">
+      <div class="ct">Mención aparte · Artifacts</div>
+      <p>Cuando Claude te entrega algo terminado —un documento, una web, un componente, este mismo manual— eso es un <strong>artifact</strong>: un entregable que se abre, se descarga y se reutiliza. Es la “pieza renderizada” que sale del estudio.</p>
+    </div>
+
+    <div class="grid3 reveal" style="margin-top:14px">
+      <div class="card"><span class="ico">🗂️</span><h3>Conectores directos vs. MCP</h3><p>Un <strong>conector directo</strong> es una integración oficial lista para usar (Gmail, Drive). Un <strong>MCP</strong> es un estándar abierto que permite conectar casi cualquier herramienta, incluso las que no tienen integración oficial. Más flexible, un poco más técnico.</p></div>
+      <div class="card"><span class="ico">🧩</span><h3>Por qué importan</h3><p>Sin conectores, Claude vive en una burbuja y solo te da texto. Con conectores, puede leer tu tablero de Miro, crear una tarjeta en Jira o consultar las ventas reales de tu Shopify. Ahí deja de ser asistente y pasa a ser <strong>colaborador operativo</strong>.</p></div>
+      <div class="card"><span class="ico">🎯</span><h3>La regla práctica</h3><p>¿Planificar, escribir, analizar? → <strong>Chat</strong>. ¿Construir o correr código? → <strong>Claude Code</strong>. ¿Tareas de oficina sin código? → <strong>Cowork</strong>. ¿Actuar dentro de una app tuya? → <strong>Conector / MCP</strong>.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= 04 VIBE CODING ========================= -->
+<section id="vibe" class="dark">
+  <div class="wrap">
+    <div class="sec-tag reveal"><span class="sec-num">04</span> El método</div>
+    <h2 class="title reveal">Qué es, en serio,<br>el <span class="it">vibe coding.</span></h2>
+    <p class="lede reveal">Es construir software <strong>describiendo lo que querés en lenguaje natural</strong> y dejando que la IA escriba el código, mientras vos guiás, revisás y decidís. No escribís cada línea: dirigís la película.</p>
+
+    <div style="margin:56px 0">
+      <p class="pull reveal">“No operás la cámara.<br>Dirigís a quien la opera, <span class="amb">y mantenés el ojo en el resultado.</span>”</p>
+    </div>
+
+    <div class="grid2 reveal">
+      <div class="card" style="background:#221d18;border-color:#352d25;color:#e9e0d4">
+        <h3 style="color:#fff">La mentalidad correcta</h3>
+        <p style="color:#c7bcab">Tu trabajo es tener <strong style="color:#fff">claridad de intención</strong> y <strong style="color:#fff">criterio de revisión</strong>. Sabés qué querés lograr y reconocés cuándo lo que volvió está bien o le falta. Igual que en montaje: no hace falta haber inventado el software de edición para saber que un corte está mal.</p>
+      </div>
+      <div class="card" style="background:#221d18;border-color:#352d25;color:#e9e0d4">
+        <h3 style="color:#fff">El error a evitar</h3>
+        <p style="color:#c7bcab">Pedir cosas vagas y aceptar lo primero que sale. El vibe coding no es “magia sin mirar”. Es un <strong style="color:#fff">diálogo iterativo</strong>: pedís, mirás con criterio, señalás qué cambiar, repetís. La calidad final es proporcional a lo bien que dirigís.</p>
+      </div>
+    </div>
+
+    <h3 class="reveal" style="font-size:1.6rem;color:#fff;margin:56px 0 10px">El ciclo de iteración</h3>
+    <div class="nodes reveal">
+      <div class="node" style="background:#221d18;border-color:#352d25"><div class="nlabel" style="color:#9c9082">Paso 1</div><h4 style="color:#fff">Describís</h4><p style="color:#bcb1a1">Explicás qué querés, con intención y referencias.</p></div>
+      <div class="node-arrow">→</div>
+      <div class="node" style="background:#221d18;border-color:#352d25"><div class="nlabel" style="color:#9c9082">Paso 2</div><h4 style="color:#fff">Claude construye</h4><p style="color:#bcb1a1">Escribe el código y te muestra el resultado.</p></div>
+      <div class="node-arrow">→</div>
+      <div class="node" style="background:#221d18;border-color:#352d25"><div class="nlabel" style="color:#9c9082">Paso 3</div><h4 style="color:#fff">Revisás</h4><p style="color:#bcb1a1">Mirás con tu ojo: ¿funciona? ¿está bueno?</p></div>
+      <div class="node-arrow">→</div>
+      <div class="node" style="background:#221d18;border-color:#352d25"><div class="nlabel" style="color:#9c9082">Paso 4</div><h4 style="color:#fff">Ajustás</h4><p style="color:#bcb1a1">Pedís cambios concretos. Y volvés al paso 1.</p></div>
+    </div>
+
+    <div class="callout tip reveal" style="background:#221d18;margin-top:44px">
+      <div class="ct">Cómo dar buenas indicaciones (prompting)</div>
+      <p style="color:#c7bcab">Sé específica con el <strong style="color:#fff">qué</strong> y el <strong style="color:#fff">para qué</strong>. Dale referencias visuales o tonales. Pedí de a un cambio por vez cuando estés afinando. Si algo salió mal, decí exactamente qué (“el botón es muy chico”, “el tono es muy frío”) en vez de “no me gusta”. Y nunca tengas miedo de pedir que te explique algo: preguntar no es perder tiempo, es aprender el oficio.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= 05 FLUJO ========================= -->
+<section id="flujo" style="background:var(--ink-2);color:#e9e0d4">
+  <div class="wrap">
+    <div class="sec-tag reveal" style="color:var(--amber-soft)"><span class="sec-num" style="color:#9c9082">05</span> Cómo trabajamos acá</div>
+    <h2 class="title reveal" style="color:#fff">El flujo de trabajo,<br>tal cual <span class="it" style="color:var(--amber-soft)">lo hacemos.</span></h2>
+    <p class="lede reveal" style="color:#cfc4b3">Cada tarea recorre un mismo camino, de la idea al estreno. Cuando lo internalices, vas a poder llevar un proyecto de punta a punta sin perderte.</p>
+
+    <div class="flow reveal">
+      <div class="fstep"><div class="fn">01 · ACÁ</div><h4>Planificar</h4><p>Se piensa el proyecto, se define el alcance y se generan los prompts.</p><span class="tool">Claude chat</span></div>
+      <div class="fstep"><div class="fn">02 · TABLERO</div><h4>Tarea + prompt</h4><p>Cada tarea queda registrada con su instrucción lista para ejecutar.</p><span class="tool">Jira / Miro</span></div>
+      <div class="fstep"><div class="fn">03 · TERMINAL</div><h4>Ejecutar</h4><p>Se construye el código de verdad, en vibe coding.</p><span class="tool">Claude Code</span></div>
+      <div class="fstep"><div class="fn">04 · CONTROL</div><h4>Guardar versión</h4><p>El cambio se versiona y se sube. Red de seguridad.</p><span class="tool">GitHub</span></div>
+      <div class="fstep"><div class="fn">05 · ESTRENO</div><h4>Publicar</h4><p>El proyecto queda online en segundos, con su URL.</p><span class="tool">Vercel</span></div>
+      <div class="fstep"><div class="fn">06 · CIERRE</div><h4>Marcar listo</h4><p>La tarea se cierra y se enlaza con lo entregado.</p><span class="tool">Tablero</span></div>
+    </div>
+
+    <h3 class="reveal" style="font-size:1.5rem;color:#fff;margin:60px 0 4px">El código de colores del tablero</h3>
+    <p class="reveal" style="color:#cfc4b3;margin-top:8px">Para saber de un vistazo cuánta intervención humana pide cada tarea, usamos tres colores. Memorizá esto: es el semáforo de todo nuestro trabajo.</p>
+    <div class="legend reveal">
+      <div class="li"><span class="dot g"></span> <span><strong style="color:#fff">Verde</strong> — agente 100% autónomo (vibe coding puro)</span></div>
+      <div class="li"><span class="dot p"></span> <span><strong style="color:#fff">Morado</strong> — híbrido (prompt + revisión humana)</span></div>
+      <div class="li"><span class="dot o"></span> <span><strong style="color:#fff">Naranja</strong> — requiere input humano directo</span></div>
+    </div>
+
+    <div class="callout reveal" style="background:#221d18;border-color:var(--amber-soft);margin-top:36px">
+      <div class="ct" style="color:var(--amber-soft)">Por qué este orden importa</div>
+      <p style="color:#c7bcab">Planificar antes de construir no es burocracia: es lo que hace que el vibe coding salga bien. Un prompt bien pensado en el chat ahorra horas en la terminal. Igual que en cine — un buen guion y un buen plan de rodaje evitan el caos en el set.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= 06 TECNICA ========================= -->
+<section id="tecnica">
+  <div class="wrap">
+    <div class="sec-tag reveal"><span class="sec-num">06</span> La caja de herramientas</div>
+    <h2 class="title reveal">Las piezas técnicas,<br>sin <span class="it">asustarse.</span></h2>
+    <p class="lede reveal">Estos nombres aparecen siempre. No necesitás dominarlos hoy; necesitás saber qué son y para qué sirven. Lo demás lo hace Claude con vos.</p>
+
+    <div class="grid2 reveal">
+      <div class="card"><span class="ico">⌨️</span><h3>La terminal</h3><p>Una ventana donde le escribís órdenes a tu computadora con texto, en vez de hacer clics. Parece intimidante, pero acá es simplemente <strong>la sala donde vive Claude Code</strong>. Le hablás en lenguaje natural y él traduce.</p></div>
+      <div class="card"><span class="ico">📦</span><h3>Node (Node.js)</h3><p>El “motor” que hace funcionar la mayoría de los proyectos web modernos en tu máquina. Lo instalás una vez. Es lo que permite <strong>levantar un proyecto</strong> y verlo corriendo en tu computadora antes de publicarlo.</p></div>
+      <div class="card"><span class="ico">🔁</span><h3>Git + GitHub</h3><p><strong>Git</strong> guarda el historial de cambios de tu proyecto (cada “toma” se llama <em>commit</em>). <strong>GitHub</strong> es la nube donde ese historial vive y se comparte. Juntos = poder volver atrás siempre y trabajar en equipo sin pisarse.</p></div>
+      <div class="card"><span class="ico">🚀</span><h3>Vercel</h3><p>El servicio que toma tu proyecto y lo <strong>publica online en segundos</strong>, con una dirección web real. Conectado a GitHub, cada cambio que subís se estrena solo. Es el “laboratorio de revelado” instantáneo.</p></div>
+    </div>
+
+    <h3 class="reveal" style="font-size:1.6rem;margin:60px 0 6px">Desarrollo vs. producción</h3>
+    <p class="reveal">Un concepto que vale oro: todo proyecto vive en <strong>dos versiones en paralelo</strong>. Confundirlas es la causa número uno de sustos evitables.</p>
+
+    <div class="inst reveal">
+      <div class="box dev">
+        <div class="h">Instancia de desarrollo</div>
+        <h4>El set de ensayo</h4>
+        <p>Tu copia privada para probar, romper y experimentar. Si algo explota, no pasa nada: nadie lo está viendo. Acá se trabaja siempre primero.</p>
+      </div>
+      <div class="box prod">
+        <div class="h">Instancia de producción</div>
+        <h4>La sala de cine</h4>
+        <p>La versión que usan los usuarios reales. Acá solo llega lo que ya probaste y aprobaste. Lo que se rompe acá, se rompe en público.</p>
+      </div>
+    </div>
+
+    <div class="callout warn reveal">
+      <div class="ct">Regla de oro</div>
+      <p>Nunca pruebes algo nuevo directo en producción. Igual que no estrenás una toma sin verla en monitor primero. Construís y probás en desarrollo; publicás a producción solo cuando estás conforme.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= 07 AUTOMATIZACION ========================= -->
+<section id="automatizacion" class="dark">
+  <div class="wrap">
+    <div class="sec-tag reveal"><span class="sec-num">07</span> Escala</div>
+    <h2 class="title reveal">Automatización<br>y sistemas de <span class="it">nodos.</span></h2>
+    <p class="lede reveal">Una cosa es crear una pieza. Otra es montar una <strong>línea de producción</strong> que genere o procese contenido sola, a gran escala. Eso es automatización, y es donde el trabajo deja de depender de tus horas.</p>
+
+    <p class="reveal" style="margin-top:30px">Las herramientas de nodos (como <strong>Make</strong> o n8n) funcionan como un tablero visual: cada <strong>nodo</strong> es un paso, y los conectás con flechas. No hay que escribir código: arrastrás bloques. Un flujo típico se lee como una receta:</p>
+
+    <div class="nodes reveal" style="margin-top:34px">
+      <div class="node" style="background:#221d18;border-color:#352d25"><div class="nlabel" style="color:#9c9082">Disparador</div><h4 style="color:#fff">Algo pasa</h4><p style="color:#bcb1a1">Llega un DM, un mail, un pedido nuevo.</p></div>
+      <div class="node-arrow">→</div>
+      <div class="node" style="background:#221d18;border-color:#352d25"><div class="nlabel" style="color:#9c9082">Procesa</div><h4 style="color:#fff">Claude decide</h4><p style="color:#bcb1a1">Clasifica, responde o transforma la info.</p></div>
+      <div class="node-arrow">→</div>
+      <div class="node" style="background:#221d18;border-color:#352d25"><div class="nlabel" style="color:#9c9082">Guarda / actúa</div><h4 style="color:#fff">Resultado</h4><p style="color:#bcb1a1">Lo anota en una planilla, manda un mensaje, crea una tarea.</p></div>
+    </div>
+
+    <div class="callout tip reveal" style="background:#221d18;margin-top:40px">
+      <div class="ct">Un ejemplo real nuestro</div>
+      <p style="color:#c7bcab">Para detectar interesados en metales que escriben por Instagram, montamos: <strong style="color:#fff">Instagram (llega un DM)</strong> → <strong style="color:#fff">Claude (clasifica si hay intención de compra/venta)</strong> → <strong style="color:#fff">Google Sheets (lo guarda como lead)</strong>. Una vez armado, funciona solo, 24/7, sin que nadie esté mirando. Eso es escalar sin sumar horas humanas.</p>
+    </div>
+
+    <p class="reveal">El mismo principio sirve para generar contenido en volumen: un flujo puede tomar una lista de productos y producir descripciones, posts o fichas para cada uno automáticamente. La clave siempre es la misma: <strong>diseñás el flujo una vez, y trabaja para siempre.</strong></p>
+  </div>
+</section>
+
+<!-- ========================= 08 NEGOCIOS + SHOPIFY ========================= -->
+<section id="negocios">
+  <div class="wrap">
+    <div class="sec-tag reveal"><span class="sec-num">08</span> El para qué</div>
+    <h2 class="title reveal">Negocios digitales<br>e <span class="it">introducción a Shopify.</span></h2>
+    <p class="lede reveal">Todo lo anterior es medio para un fin: construir negocios que <strong>crezcan más allá del tiempo humano</strong>. Esa es la diferencia entre cobrar por hora y construir algo que factura mientras dormís.</p>
+
+    <div class="grid3 reveal">
+      <div class="card"><span class="ico">⏱️</span><h3>El límite humano</h3><p>Un servicio (hacer uñas, filmar, editar) factura mientras vos trabajás. Si parás, para. Es valioso, pero tiene techo: <strong>las horas del día</strong>.</p></div>
+      <div class="card"><span class="ico">📈</span><h3>Lo escalable</h3><p>Un producto digital, una tienda online o una automatización pueden atender a mil personas a la vez sin más esfuerzo tuyo. El esfuerzo es <strong>al construir</strong>, no al vender.</p></div>
+      <div class="card"><span class="ico">🧠</span><h3>El cambio de chip</h3><p>La pregunta deja de ser “¿cuánto puedo hacer yo?” y pasa a ser “¿qué sistema puedo construir para que esto suceda sin mí?”. Ese es el corazón del negocio digital.</p></div>
+    </div>
+
+    <h3 class="reveal" style="font-size:1.6rem;margin:60px 0 6px">Shopify, en una toma</h3>
+    <p class="reveal"><strong>Shopify</strong> es una plataforma para crear y manejar tiendas online sin tener que programar la tienda desde cero. Te da el carrito, los pagos, el inventario, los pedidos y las estadísticas listos. Vos te concentrás en los productos, la marca y la experiencia — justo donde tu ojo estético suma más.</p>
+
+    <div class="grid2 reveal" style="margin-top:14px">
+      <div class="card"><span class="ico">🛍️</span><h3>Qué resuelve</h3><p>Catálogo de productos, página de cada producto, carrito, cobro con tarjeta, gestión de pedidos y envíos, cupones, y reportes de ventas. Todo en un panel. Y desde Claude, con el conector de Shopify, podemos consultar y operar la tienda directamente.</p></div>
+      <div class="card"><span class="ico">💡</span><h3>Conceptos que vas a oír</h3><p><strong>Dropshipping</strong>: vender productos que no tenés en stock; el proveedor los envía. <strong>Ticket promedio</strong>: cuánto gasta en promedio cada cliente. <strong>Conversión</strong>: qué porcentaje de visitas termina comprando. <strong>Recuperación de carritos</strong>: reconquistar a quien dejó la compra a medias.</p></div>
+    </div>
+
+    <div class="callout tip reveal">
+      <div class="ct">Ejemplos vivos del estudio</div>
+      <p><strong>0800 Don Rouch</strong> es una marca de joyería urban-luxury con su tienda Shopify, donde analizamos ventas reales para tomar decisiones (qué producto es el ancla, qué mercado tiene más margen, en qué meses activar). <strong>Cocoate Uñitas</strong> es el caso inverso: un servicio de manicura que escalamos justamente sumándole una capa digital y una tienda para superar el techo de las horas. Vas a trabajar con casos así.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= 09 PRACTICAS ========================= -->
+<section id="practicas" class="dark">
+  <div class="wrap">
+    <div class="sec-tag reveal"><span class="sec-num">09</span> Mentalidad</div>
+    <h2 class="title reveal">Buenas prácticas<br>y la mentalidad del <span class="it">“segundo yo”.</span></h2>
+    <p class="lede reveal">El objetivo final: que puedas tomar un proyecto y llevarlo con el mismo criterio que lo llevaría Nico. Estas son las costumbres que lo hacen posible.</p>
+
+    <div class="grid2 reveal" style="margin-top:46px">
+      <div class="card" style="background:#221d18;border-color:#352d25;color:#e9e0d4"><h3 style="color:#fff">Planificá antes de construir</h3><p style="color:#c7bcab">Nunca arranques a codear sin un plan. Primero en el chat: qué, para qué, con qué herramientas, en qué pasos. El plan es el guion; sin guion no hay rodaje.</p></div>
+      <div class="card" style="background:#221d18;border-color:#352d25;color:#e9e0d4"><h3 style="color:#fff">Dividí en tareas chicas</h3><p style="color:#c7bcab">Un proyecto enorme asusta; diez tareas claras se resuelven una por una. Trabajamos por “agentes” y pasos concretos, no en bloques gigantes.</p></div>
+      <div class="card" style="background:#221d18;border-color:#352d25;color:#e9e0d4"><h3 style="color:#fff">Iterá sin miedo</h3><p style="color:#c7bcab">La primera versión nunca es la final, y está perfecto. Pedí, mirá, ajustá. Con Git de red de seguridad, podés probar cualquier cosa sin riesgo.</p></div>
+      <div class="card" style="background:#221d18;border-color:#352d25;color:#e9e0d4"><h3 style="color:#fff">Usá la skill correcta</h3><p style="color:#c7bcab">¿PDF? ¿presentación? ¿planilla? Pedí explícitamente el formato y dejá que Claude active el oficio adecuado. No improvises lo que ya tiene especialista.</p></div>
+      <div class="card" style="background:#221d18;border-color:#352d25;color:#e9e0d4"><h3 style="color:#fff">Dale contexto, siempre</h3><p style="color:#c7bcab">Claude solo sabe lo que está en la conversación. Subí los archivos, contá el trasfondo, pegá los datos. Más contexto = mejor resultado, casi sin excepción.</p></div>
+      <div class="card" style="background:#221d18;border-color:#352d25;color:#e9e0d4"><h3 style="color:#fff">Revisá con tu ojo</h3><p style="color:#c7bcab">Esta es tu ventaja. La máquina entrega rápido; vos decidís si está bueno. Nunca apagues el criterio estético y narrativo: es exactamente lo que nadie más aporta.</p></div>
+    </div>
+
+    <div style="margin:60px 0 0">
+      <p class="pull reveal">“La técnica se aprende.<br>El criterio <span class="amb">ya lo traés del cine.</span><br>Eso es lo difícil de enseñar.”</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= 10 ARRANQUE ========================= -->
+<section id="arranque">
+  <div class="wrap">
+    <div class="sec-tag reveal"><span class="sec-num">10</span> A rodar</div>
+    <h2 class="title reveal">Tus primeros<br><span class="it">pasos concretos.</span></h2>
+    <p class="lede reveal">No intentes con todo a la vez. Andá tildando esta lista en orden. Cada punto es una victoria chica que construye la base.</p>
+
+    <ul class="check">
+      <li class="reveal"><span class="box">1</span><span class="ctext"><strong>Familiarizate con Claude chat</strong><span>Abrí claude.ai, charlá, subí un archivo, pedile un resumen. Acostumbrate a hablarle como a un colaborador, no como a un buscador. Este manual mismo salió de acá.</span></span></li>
+      <li class="reveal"><span class="box">2</span><span class="ctext"><strong>Explorá un Proyecto</strong><span>Pedile a Nico que te sume a un proyecto existente (0800 DR, GeBox o el que toque) y mirá cómo está ordenado: las conversaciones, los archivos, las instrucciones.</span></span></li>
+      <li class="reveal"><span class="box">3</span><span class="ctext"><strong>Hacé tu primer entregable con una skill</strong><span>Pedile a Claude que te arme un PDF o una presentación de algo simple. Mirá cómo trabaja la skill de punta a punta. Es la forma más rápida de “sentir” el flujo.</span></span></li>
+      <li class="reveal"><span class="box">4</span><span class="ctext"><strong>Instalá lo básico para vibe coding</strong><span>Con la guía de Claude Code: instalá Node y Git, creá una cuenta de GitHub. No te preocupes por entender cada comando: pedile a Claude que te guíe paso a paso y te explique qué hace cada cosa.</span></span></li>
+      <li class="reveal"><span class="box">5</span><span class="ctext"><strong>Levantá tu primer proyecto chico</strong><span>Una landing simple de una sola página, de algo que te guste. Construila con Claude Code, vela correr en tu compu (desarrollo), y publicala en Vercel (producción). Tu primer “estreno”.</span></span></li>
+      <li class="reveal"><span class="box">6</span><span class="ctext"><strong>Sombreá un flujo real</strong><span>Acompañá a Nico en una tarea de punta a punta —del chat al tablero, a Claude Code, a GitHub, a Vercel— solo mirando. Ver el ciclo completo una vez vale por mil explicaciones.</span></span></li>
+      <li class="reveal"><span class="box">7</span><span class="ctext"><strong>Tomá una tarea verde</strong><span>Cuando estés lista, agarrá una tarea marcada en verde (autónoma) y resolvela vos sola con Claude. Es tu primer paso oficial como “segundo yo”.</span></span></li>
+    </ul>
+
+    <div class="callout tip reveal" style="margin-top:40px">
+      <div class="ct">Recordá siempre</div>
+      <p>Tu mejor profesor está a un mensaje de distancia. Cada vez que algo no se entienda —un término, un comando, un concepto de este manual— abrí Claude y preguntale como le preguntarías a un colega paciente. No existe la pregunta tonta; existe la duda que no preguntaste.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= 11 CHEAT SHEET ========================= -->
+<section id="cheat" style="background:var(--paper-2)">
+  <div class="wrap">
+    <div class="sec-tag reveal"><span class="sec-num">11</span> Para tener a mano</div>
+    <h2 class="title reveal">Chuleta rápida.</h2>
+    <p class="lede reveal">El resumen de bolsillo. Si solo recordás esta página, ya tenés el 80%.</p>
+
+    <div class="grid2 reveal" style="margin-top:40px">
+      <div class="card">
+        <h3>Las salas de Claude</h3>
+        <p style="margin-top:14px"><strong>Chat</strong> → pensar, planificar, escribir, analizar.<br>
+        <strong>Proyectos</strong> → carpetas con memoria y contexto.<br>
+        <strong>Skills</strong> → especialistas (PDF, slides, planillas).<br>
+        <strong>Conectores / MCP</strong> → actuar dentro de tus apps.<br>
+        <strong>Claude Code</strong> → construir y correr código.<br>
+        <strong>Cowork</strong> → tareas de oficina sin código.</p>
+      </div>
+      <div class="card">
+        <h3>El flujo, en seis tiempos</h3>
+        <p style="margin-top:14px"><strong>1.</strong> Planificar (Chat) →<br>
+        <strong>2.</strong> Tarea + prompt (Tablero) →<br>
+        <strong>3.</strong> Ejecutar (Claude Code) →<br>
+        <strong>4.</strong> Guardar versión (GitHub) →<br>
+        <strong>5.</strong> Publicar (Vercel) →<br>
+        <strong>6.</strong> Cerrar tarea (Tablero).</p>
+      </div>
+      <div class="card">
+        <h3>El semáforo de tareas</h3>
+        <div class="legend" style="margin:14px 0 0">
+          <div class="li"><span class="dot g"></span> Verde — autónomo</div>
+          <div class="li"><span class="dot p"></span> Morado — híbrido</div>
+          <div class="li"><span class="dot o"></span> Naranja — humano</div>
+        </div>
+        <p style="margin-top:14px">Cuanto más a la derecha, más te necesita a vos en la silla de dirección.</p>
+      </div>
+      <div class="card">
+        <h3>Las tres reglas de oro</h3>
+        <p style="margin-top:14px"><strong>1.</strong> Planificá antes de construir.<br>
+        <strong>2.</strong> Probá en desarrollo, publicá en producción.<br>
+        <strong>3.</strong> Dale contexto y revisá con tu ojo.</p>
+      </div>
+    </div>
+
+    <div class="stat-row reveal" style="justify-content:center;margin-top:60px;text-align:center">
+      <div class="stat"><div class="num">1</div><div class="lab">cabeza que dirige (vos)</div></div>
+      <div class="stat"><div class="num">∞</div><div class="lab">manos que ejecutan (la IA)</div></div>
+      <div class="stat"><div class="num">6</div><div class="lab">pasos del flujo</div></div>
+      <div class="stat"><div class="num">3</div><div class="lab">colores del semáforo</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= FOOTER ========================= -->
+<footer>
+  <div class="narrow">
+    <div class="fmark">Fin del primer rollo.</div>
+    <p>Esto no es un examen ni un certificado. Es un punto de partida. La verdadera capacitación empieza cuando construyas tu primera cosa y te equivoques y la arregles.</p>
+    <p>Bienvenida al estudio, Solana. El ojo ya lo tenés; ahora le sumamos las herramientas.</p>
+    <div class="sig">Manual de a bordo · Nico + Clau · Valencia 2026</div>
+  </div>
+</footer>
+
+<script>
+  // progress bar
+  const prog=document.getElementById('progress');
+  window.addEventListener('scroll',()=>{
+    const h=document.documentElement;
+    const sc=(h.scrollTop)/(h.scrollHeight-h.clientHeight)*100;
+    prog.style.width=sc+'%';
+  });
+  // scroll reveals
+  const io=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
+  },{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
